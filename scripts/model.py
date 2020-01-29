@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Transformer(nn.Module):
-    def __init__(self, EMBED_SIZE, EMBED_DIM, TRANS_HEAD, TRANS_FWD, TRANS_DROP, TRANS_ACTIV, TRANS_LAYER, LSTM_SIZE, LSTM_LAYER, LSTM_BIDIR, FC_DROP, FC_OUT):
+    def __init__(self, EMBED_SIZE, EMBED_DIM, TRANS_HEAD, TRANS_FWD, TRANS_DROP, TRANS_ACTIV, TRANS_LAYER, LSTM_SIZE, LSTM_LAYER, LSTM_BIDIR, FC_DROP, FC_OUT, multigpu):
         super(Transformer,self).__init__()
         
         self.embed = nn.Embedding(num_embeddings=EMBED_SIZE,
@@ -26,10 +26,14 @@ class Transformer(nn.Module):
           self.fc1 = nn.Linear(LSTM_SIZE*2,FC_OUT)
         else:
           self.fc1 = nn.Linear(LSTM_SIZE,FC_OUT)
-    
+
+        self.mGPU = multigpu
+
     def forward(self, x):
         x = self.embed(x)
         x = self.trans_encoder(x)
+        if self.mGPU:
+          self.lstm1.flatten_parameters()
         output, (hidden, cell) = self.lstm1(x)
         x = self.dropout(torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim=1))
         x = self.fc1(x)

@@ -11,22 +11,27 @@ global device
 seed = 1234
 torch.manual_seed(seed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+if device == 'cuda':
+	multigpu = torch.cuda.device_count() > 1
+#os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 cudnn.benchmark = True
 cudnn.enabled = True
 print(device)
 
+# Batch Size
+# 84 - 8 GPU (11GB Each)
+
 ## Training & vocab parameters
 DATA_PATH = 'data'
 VOCAB_SIZE = 10000
-BATCH_SIZE = 48
+BATCH_SIZE = 84
 EPOCHS = 50
 BEST_VAL = 9999.9
 BEST_MODEL = None
 
 ## Model parameters
 EMBED_SIZE = VOCAB_SIZE+2
-EMBED_DIM = 400
+EMBED_DIM = 128
 TRANS_HEAD = 8
 TRANS_FWD = 2048
 TRANS_DROP = 0.1
@@ -52,7 +57,9 @@ if __name__ == '__main__':
 		VOCAB_SIZE, 
 		BATCH_SIZE)
 
-	model = Transformer(EMBED_SIZE, EMBED_DIM, TRANS_HEAD, TRANS_FWD, TRANS_DROP, TRANS_ACTIV, TRANS_LAYER, LSTM_SIZE, LSTM_LAYER, LSTM_BIDIR, FC_DROP, FC_OUT)
+	model = Transformer(EMBED_SIZE, EMBED_DIM, TRANS_HEAD, TRANS_FWD, TRANS_DROP, TRANS_ACTIV, TRANS_LAYER, LSTM_SIZE, LSTM_LAYER, LSTM_BIDIR, FC_DROP, FC_OUT, multigpu)
+	if multigpu:
+		model = torch.nn.DataParallel(model)
 	model.to(device)
 	print(model)
 
