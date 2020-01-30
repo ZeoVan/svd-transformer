@@ -11,6 +11,7 @@ global device
 seed = 1234
 torch.manual_seed(seed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+multigpu = False
 if device == 'cuda':
 	multigpu = torch.cuda.device_count() > 1
 #os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
